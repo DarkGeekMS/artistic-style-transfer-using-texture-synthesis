@@ -16,7 +16,7 @@ class DataLoader:
         vid_ext (list[string]): Possible video extensions.
         img_ext (list[string]): Possible image extensions.
     """
-    def __init__(self, img_size):
+    def __init__(self, img_size=400):
         """ 
         The constructor for DataLoader class. 
   
@@ -28,7 +28,7 @@ class DataLoader:
         self.style = None
         self.seg_mask = None
         self.vid_ext = ['.avi', '.mp4', '.mkv', '.wmv']
-        self.img_ext = ['.tif','.png', '.jpg', '.jpeg']
+        self.img_ext = ['.tif','.png', '.jpg', 'jpeg']
 
     def load_content(self, file_path):
         """ 
@@ -38,7 +38,7 @@ class DataLoader:
             file_path (string): Path to the content image (or video). 
         """
         if file_path[-4:] in self.img_ext:
-            self.content = imresize(imread(file_path), tuple(self.img_size,self.img_size))
+            self.content = imresize(imread(file_path), tuple((self.img_size,self.img_size)))
         elif file_path[-4:] in self.vid_ext:   
             pass # to be implemented in case of video stylization 
         else:
@@ -51,7 +51,10 @@ class DataLoader:
         Parameters: 
             file_path (string): Path to the style image. 
         """
-        self.style = imresize(imread(file_path), tuple(self.img_size,self.img_size))
+        if file_path[-4:] in self.img_ext:
+            self.style = imresize(imread(file_path), tuple((self.img_size,self.img_size)))
+        else:
+            raise Exception('Format incompatible!')    
 
     def segment_content(self):
         """ 
