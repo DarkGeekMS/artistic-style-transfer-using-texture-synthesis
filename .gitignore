@@ -103,3 +103,6 @@ conda-env/
 
 # mypy
 .mypy_cache/
+
+#folders
+.idea
