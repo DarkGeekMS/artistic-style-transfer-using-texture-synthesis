@@ -71,7 +71,7 @@ def apply_linear_smoothing_filter_horizontally(img, transformed_pixels, box_radi
     # For each row, find the indices of the lower and upper bounds for each pixel among transformed pixels.
     for i in range(height):
         lower_bound_indices[i] = np.searchsorted(transformed_pixels[i], lower_bounds[i])
-        upper_bound_indices[i] = np.searchsorted(transformed_pixels[i], upper_bounds[i]) - 1
+        upper_bound_indices[i] = np.searchsorted(transformed_pixels[i], upper_bounds[i], side='right') - 1
 
     row_indices = np.indices(upper_bound_indices.shape)[0]  # Dummy matrix to produce row indices
     # For each row,
