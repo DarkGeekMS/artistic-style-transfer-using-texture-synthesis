@@ -2,7 +2,7 @@ import os
 import numpy as np
 from scipy.misc import imread, imsave, imresize
 
-import utils.segment
+from utils.segment import morphChaneVese
 
 class DataLoader:
     """ 
@@ -60,7 +60,7 @@ class DataLoader:
         """ 
         The function to call the segmentation algorithm on content image. 
         """
-        pass
+        self.seg_mask = morphChaneVese(self.content)
 
     def prepare_data(self, content_path, style_path):
         """ 
