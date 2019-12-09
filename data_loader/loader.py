@@ -38,7 +38,7 @@ class DataLoader:
             file_path (string): Path to the content image (or video). 
         """
         if file_path[-4:] in self.img_ext:
-            self.content = imresize(imread(file_path), tuple((self.img_size,self.img_size)))
+            self.content = imresize(imread(file_path), tuple((self.img_size,self.img_size))) / 255.0
         elif file_path[-4:] in self.vid_ext:   
             pass # to be implemented in case of video stylization 
         else:
@@ -52,7 +52,7 @@ class DataLoader:
             file_path (string): Path to the style image. 
         """
         if file_path[-4:] in self.img_ext:
-            self.style = imresize(imread(file_path), tuple((self.img_size,self.img_size)))
+            self.style = imresize(imread(file_path), tuple((self.img_size,self.img_size))) / 255.0
         else:
             raise Exception('Format incompatible!')    
 

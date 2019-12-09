@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.misc import imresize
 from sklearn.feature_extraction.image import extract_patches
+from skimage.util import view_as_windows, random_noise
 from sklearn.neighbors import NearestNeighbors
 
 from data_loader.loader import DataLoader
@@ -32,7 +33,7 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     # initialization ...
     # call color tranfer algorithm on content image
     print("Performing Color Transfer ...")
-    data_gen.content = color_transfer.color_transfer(data_gen.style, data_gen.content)
+    #data_gen.content = color_transfer.color_transfer(data_gen.style, data_gen.content)
     
     # build gaussian pyramid
     print("Building Pyramids ...")
@@ -40,9 +41,9 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     style_layers = []
     seg_layers = []
     for iter in range(num_res-1, 0, -1):
-        content_layers.append(imresize(data_gen.content, size=1/(2**iter), interp="bicubic"))
-        style_layers.append(imresize(data_gen.style, size=1/(2**iter), interp="bicubic"))
-        seg_layers.append(imresize(data_gen.seg_mask, size=1/(2**iter), interp="bicubic"))  
+        content_layers.append(imresize(data_gen.content, size=1/(2**iter), interp="bicubic") / 255.0)
+        style_layers.append(imresize(data_gen.style, size=1/(2**iter), interp="bicubic") / 255.0)
+        seg_layers.append(imresize(data_gen.seg_mask, size=1/(2**iter), interp="bicubic") / 255.0)  
     content_layers.append(data_gen.content)
     style_layers.append(data_gen.style)
     seg_layers.append(data_gen.seg_mask)
@@ -58,7 +59,7 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     
     # initialize X
     print("Initializing Output ...")
-    X = content_layers[0] + np.random.normal(0, 50, content_layers[0].shape)
+    X = random_noise(content_layers[0], mode='gaussian', var=50)
     
     # main stylization loop ...
     print()
@@ -80,16 +81,17 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
                 X = irls.IRLS(X, X_patches, style_patches[s_index][p_index], neighbors, proj_matrix, patch_sizes[p_index], sub_gaps[p_index], irls_iter, robust_stat)
                 
                 # content fusion
-                X = np.dot(np.linalg.inv(seg_layers[s_index] + np.diag(np.repeat(1, seg_layers[s_index].shape[0]))), (X + np.dot(seg_layers[s_index], content_layers[s_index])))
+                seg_mask = seg_layers[s_index].reshape(X.shape[0], X.shape[1], 1)
+                X = (1.0 / (seg_mask + 1)) * (X + (seg_mask * content_layers[s_index]))
                 
                 # color transfer
-                X = color_transfer.color_transfer(style_layers[s_index], X)
+                #X = color_transfer.color_transfer(style_layers[s_index], X)
                 
                 # denoise
-                X = denoise.denoise_image(X)
+                #X = denoise.denoise_image(X)
                 
         if (s_index != num_res-1):        
-            X = imresize(X, size=2.0, interp="bicubic").astype(np.float32)  
+            X = imresize(X, size=2.0, interp="bicubic").astype(np.float32) / 255.0 
         print()          
 
     print("Stylization Done!")
