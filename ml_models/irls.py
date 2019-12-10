@@ -28,6 +28,7 @@ def IRLS(X, X_patches, style_patches, neighbors, proj_matrix, patch_size, sub_ga
         
         # apply KNN and initialize weights matrix
         distances, indices = neighbors.kneighbors(x_features)
+        distances += 0.0001
         W = np.power(distances, r-2)
 
         # initialize the cummulative matrix and extract patches corresponding to both X and style patches

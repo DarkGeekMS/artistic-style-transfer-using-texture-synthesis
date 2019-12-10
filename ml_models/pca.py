@@ -22,7 +22,7 @@ def pca(original_feature_vector):
     covariance_matrix = np.cov(centralized_matrix.T)
     # eigen decomposition of covariance matrix
     values, projection_matrix = eig(covariance_matrix)
-    projection_matrix = projection_matrix.real
+    projection_matrix = np.absolute(projection_matrix)
     # projected data
     result = projection_matrix.T.dot(centralized_matrix.T)
 
