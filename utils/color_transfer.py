@@ -2,6 +2,58 @@ import numpy as np
 import cv2
 import skimage.io as io
 import matplotlib.pyplot as plt
+from scipy import stats
+
+
+# color transfer with histogram matching
+def HM_color_transfer(content, style):
+    """
+        Color transfer the content image to the style image using cumulative
+        distribution of both images,
+        Args:
+            content: content image in RGB space.
+            style: target style in RGB space.
+
+        Returns:
+            Color transfer image in RGB space.
+    """
+    #copy style image and content image then convert them from 0:1 to 0:255 scale.
+    transfered = np.copy(content)
+    style = np.copy(style)
+    transfered *=255
+    style *= 255
+
+    #calculate normalized cumulative histogram then update the content image based on the calculated values.
+    for h in range (0,3):
+        content_c = transfered[:,:,h]
+        style_c   = style[:,:,h]
+        height , width = content_c.shape
+        contentValues,_,_,_ = stats.cumfreq(content_c, numbins=256)
+        contentValues /= contentValues[-1]
+
+        styleValues,_,_,_   = stats.cumfreq(style_c, numbins=256)
+        styleValues /= styleValues[-1]
+
+        K=256
+        new_values=np.zeros((K))
+
+        for a in np.arange(K):
+            j=K-1
+            while True:
+                new_values[a]=j
+                j=j-1
+                if j<0 or contentValues[a]>styleValues[j]:
+                    break
+
+        for i in np.arange(height):
+            for j in np.arange(width):
+                a=content_c.item(i,j)
+                b=new_values[int(a)]
+                transfered[:,:,h].itemset((i,j),b)
+        #transfered[:,:,h] = gaussian(transfered[:,:,h])
+    #return the image to 0:1 scale
+    transfered = transfered /255
+    return transfered
 
 
 def color_transfer(source, target):
