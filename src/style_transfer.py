@@ -33,14 +33,14 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     ### initialization ...
     ## call color tranfer algorithm on content image
     print("Performing Color Transfer ...")
-    data_gen.content = color_transfer.color_transfer(data_gen.style, data_gen.content)
+    adapt_content = color_transfer.HM_color_transfer(data_gen.style, data_gen.content)
     
     ## build gaussian pyramid
     print("Building Pyramids ...")
     content_layers = []
     style_layers = []
     seg_layers = []
-    content_layers.append(data_gen.content)
+    content_layers.append(adapt_content)
     style_layers.append(data_gen.style)
     seg_layers.append(data_gen.seg_mask)
     for iter in range(num_res-1, 0, -1):
@@ -100,7 +100,7 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
                 X = (1.0 / (15.0 * current_seg + 1)) * (X + (15.0 * current_seg * current_content))
 
                 # color transfer
-                X = color_transfer.color_transfer(current_style, X)
+                X = color_transfer.HM_color_transfer(current_style, X)
 
                 # denoise
                 X[:original_size, :original_size, :] = denoise.denoise_image(X[:original_size, :original_size, :], sigma_s=15, sigma_r=0.17, iterations=3)
