@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from sklearn.feature_extraction.image import extract_patches
-from skimage.util import view_as_windows, random_noise
+from skimage.util import view_as_windows, random_noise, pad
 from sklearn.neighbors import NearestNeighbors
 
 from data_loader.loader import DataLoader
@@ -25,17 +25,17 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     ndarray: stylized image
   
     """
-    # data loading ...
+    ### data loading ...
     print("Initializing Dataloader ...")
     data_gen = DataLoader(img_size)
     data_gen.prepare_data(content_path, style_path)
 
-    # initialization ...
-    # call color tranfer algorithm on content image
+    ### initialization ...
+    ## call color tranfer algorithm on content image
     print("Performing Color Transfer ...")
     data_gen.content = color_transfer.color_transfer(data_gen.style, data_gen.content)
     
-    # build gaussian pyramid
+    ## build gaussian pyramid
     print("Building Pyramids ...")
     content_layers = []
     style_layers = []
@@ -51,53 +51,70 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     style_layers.reverse()  
     seg_layers.reverse()  
 
-    # setup patches
-    print("Patching Style Layers ...")
-    style_patches = []
-    for layer in style_layers:
-        layer_patches = []
-        for i in range(len(patch_sizes)):
-            layer_patches.append(extract_patches(layer, patch_shape=(patch_sizes[i],patch_sizes[i],3), extraction_step=sub_gaps[i]))
-        style_patches.append(layer_patches) 
-    
-    # initialize X
+    ## initialize X
     print("Initializing Output ...")
-    X = random_noise(content_layers[0], mode='gaussian', var=20 / 250.0)
+    X = random_noise(content_layers[0], mode='gaussian', var=50)
     
-    # main stylization loop ...
+    ### main stylization loop ...
     print()
     print("Starting Stylization ...")
     print()
+
     for s_index in range(num_res):
         print("Scale",s_index,": ")
+        
+        ## add some extra noise to the output
         X = random_noise(X, mode='gaussian', var=20 / 250.0)
+
         for p_index in range(len(patch_sizes)):
             print("Patch Size",patch_sizes[p_index],": ")
-            style_features = style_patches[s_index][p_index].reshape(-1, patch_sizes[p_index] * patch_sizes[p_index] * 3)
+
+            ## pad content, style, segmentation mask and X for correct style mapping
+            # calculate padding size value
+            original_size = style_layers[s_index].shape[0]
+            num_patches = int((original_size - patch_sizes[p_index]) / sub_gaps[p_index] + 1)	
+            pad_size = patch_sizes[p_index] - (original_size  - num_patches * sub_gaps[p_index])
+            pad_arr = ((0, pad_size), (0, pad_size), (0, 0))
+            # pad all inputs
+            current_style = pad(style_layers[s_index], pad_arr, mode='edge')
+            current_seg = pad(seg_layers[s_index].reshape(seg_layers[s_index].shape[0], seg_layers[s_index].shape[1], 1), pad_arr, mode='edge')
+            current_content = pad(content_layers[s_index], pad_arr, mode='edge')
+            X = pad(X, pad_arr, mode='edge')
+            
+            ## extract style patches and fit nearest neighbors
+            style_patches = extract_patches(current_style, patch_shape=(patch_sizes[p_index], patch_sizes[p_index], 3), extraction_step=sub_gaps[p_index])
+            style_features = style_patches.reshape(-1, patch_sizes[p_index] * patch_sizes[p_index] * 3)
             proj_matrix, proj_style_features = pca.pca(style_features)
             neighbors = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(proj_style_features)
+            
             for iter in range(alg_iter):
                 print("Iteration",iter," ...")
+
                 # patch matching
                 X_patches = extract_patches(X, patch_shape=(patch_sizes[p_index], patch_sizes[p_index], 3), extraction_step=sub_gaps[p_index])
 
                 # robust aggregation
-                X = irls.IRLS(X, X_patches, style_patches[s_index][p_index], neighbors, proj_matrix, patch_sizes[p_index], sub_gaps[p_index], irls_iter, robust_stat)
-                
+                X = irls.IRLS(X, X_patches, style_patches, neighbors, proj_matrix, patch_sizes[p_index], sub_gaps[p_index], irls_iter, robust_stat)
+
                 # content fusion
-                seg_mask = seg_layers[s_index].reshape(X.shape[0], X.shape[1], 1)
-                X = (1.0 / (seg_mask + 1)) * (X + (seg_mask * content_layers[s_index]))
-                
+                X = (1.0 / (15.0 * current_seg + 1)) * (X + (15.0 * current_seg * current_content))
+
                 # color transfer
-                X = color_transfer.color_transfer(style_layers[s_index], X)
-                
+                X = color_transfer.color_transfer(current_style, X)
+
                 # denoise
-                X = denoise.denoise_image(X)
-                
+                X[:original_size, :original_size, :] = denoise.denoise_image(X[:original_size, :original_size, :], sigma_s=15, sigma_r=0.17, iterations=3)
+
+            X = X[:original_size, :original_size, :]  # back to the original size
+
         if (s_index != num_res-1):        
             X = cv2.resize(X.astype(np.float32), (content_layers[s_index+1].shape[0], content_layers[s_index+1].shape[1])).astype(np.float32)
+
         print()          
 
     print("Stylization Done!")
+    # save and show stylized image
+    im_to_write = cv2.cvtColor((X*255.0).astype(np.uint8), cv2.COLOR_RGB2BGR)
+    cv2.imwrite("outputs/output.png", im_to_write)
     utils.show_images([data_gen.content, data_gen.style, X], ["Content", "Style", "Stylized Image"])
 

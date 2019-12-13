@@ -223,8 +223,8 @@ def SegmentationMask(image , version = 2, mp=3, itrs =120, thresh =0.5, gsigma =
             Binary image represents the filled object.
     """
     if version == 0:
-        return segBlurring(image, gsigma)
+        return morphChaneVese(image, itrs, mp)
     if version == 1:
         return segMask(image , thresh)
-    #default version is morphological_chan_vese technique.
-    return morphChaneVese(image, itrs, mp)
+    #default version is blurring segmentation technique.
+    return segBlurring(image, gsigma)

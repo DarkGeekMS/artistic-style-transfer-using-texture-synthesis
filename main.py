@@ -33,13 +33,13 @@ def main():
     argparser.add_argument(
         '-ps', '--patch_sizes',
         metavar='PS',
-        default=[33,21,13,9],
+        default=[33,21,13,9,5],
         help='patch sizes to be used'
     ) 
     argparser.add_argument(
         '-sg', '--sub_gaps',
         metavar='SG',
-        default=[28,18,8,5],
+        default=[28,18,8,5,3],
         help='subsampling gaps to be used'
     )
     argparser.add_argument(
