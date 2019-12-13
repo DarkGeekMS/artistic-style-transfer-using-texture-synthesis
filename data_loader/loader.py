@@ -1,8 +1,9 @@
 import os 
 import numpy as np
-from scipy.misc import imread, imsave, imresize
+import cv2
+from skimage.io import imread
 
-from utils.segment import morphChaneVese
+from utils.segment import SegmentationMask
 
 class DataLoader:
     """ 
@@ -38,7 +39,7 @@ class DataLoader:
             file_path (string): Path to the content image (or video). 
         """
         if file_path[-4:] in self.img_ext:
-            self.content = imresize(imread(file_path), tuple((self.img_size,self.img_size))) / 255.0
+            self.content = cv2.resize(imread(file_path), (self.img_size,self.img_size))
         elif file_path[-4:] in self.vid_ext:   
             pass # to be implemented in case of video stylization 
         else:
@@ -52,7 +53,7 @@ class DataLoader:
             file_path (string): Path to the style image. 
         """
         if file_path[-4:] in self.img_ext:
-            self.style = imresize(imread(file_path), tuple((self.img_size,self.img_size))) / 255.0
+            self.style = cv2.resize(imread(file_path), (self.img_size,self.img_size))
         else:
             raise Exception('Format incompatible!')    
 
@@ -60,7 +61,7 @@ class DataLoader:
         """ 
         The function to call the segmentation algorithm on content image. 
         """
-        self.seg_mask = morphChaneVese(self.content)
+        self.seg_mask = SegmentationMask(self.content)
 
     def prepare_data(self, content_path, style_path):
         """ 
@@ -73,6 +74,9 @@ class DataLoader:
         self.load_content(content_path)
         self.load_style(style_path)
         self.segment_content()
+        self.content = (self.content / 255.0).astype(np.float32)
+        self.style = (self.style / 255.0).astype(np.float32)
+        self.seg_mask = self.seg_mask.astype(np.float32)
 
     def reset_loader(self):
         """ 

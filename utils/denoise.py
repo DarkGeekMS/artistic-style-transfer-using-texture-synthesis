@@ -46,7 +46,7 @@ def denoise_image(img, sigma_s=60, sigma_r=0.4, iterations=1):
                                                                   box_radius)
         smoothed_img = smoothed_img.transpose(1, 0, 2)
 
-    return (smoothed_img * 255).astype(int)
+    return smoothed_img.astype(np.float32)
 
 
 def apply_linear_smoothing_filter_horizontally(img, transformed_pixels, box_radius):

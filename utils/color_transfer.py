@@ -6,13 +6,13 @@ from scipy import stats
 
 
 # color transfer with histogram matching
-def HM_color_transfer(content, style):
+def HM_color_transfer(style, content):
     """
         Color transfer the content image to the style image using cumulative
         distribution of both images,
         Args:
-            content: content image in RGB space.
             style: target style in RGB space.
+            content: content image in RGB space.
 
         Returns:
             Color transfer image in RGB space.
@@ -69,8 +69,8 @@ def color_transfer(source, target):
         """
     # convert RGB color space of source and target image to LAB color space
     # note: OpenCV expects floats to be 32-bit, so use that instead of 64-bit
-    source = cv2.cvtColor(source, cv2.COLOR_RGB2LAB).astype("float32")
-    target = cv2.cvtColor(target, cv2.COLOR_RGB2LAB).astype("float32")
+    source = cv2.cvtColor((source*255).astype("uint8"), cv2.COLOR_RGB2LAB).astype("float32")
+    target = cv2.cvtColor((target*255).astype("uint8"), cv2.COLOR_RGB2LAB).astype("float32")
     # compute color statistics for the source and target images
     (lMeanSrc, lStdSrc, aMeanSrc, aStdSrc, bMeanSrc, bStdSrc) = image_stats(source)
     (lMeanTar, lStdTar, aMeanTar, aStdTar, bMeanTar, bStdTar) = image_stats(target)
@@ -104,7 +104,7 @@ def color_transfer(source, target):
     transfer = cv2.cvtColor(transfer.astype("uint8"), cv2.COLOR_LAB2RGB)
 
     # return the color transferred image
-    return transfer
+    return (transfer / 255.0).astype(np.float32)
 
 
 def image_stats(image):

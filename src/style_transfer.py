@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.misc import imresize
+import cv2
 from sklearn.feature_extraction.image import extract_patches
 from skimage.util import view_as_windows, random_noise
 from sklearn.neighbors import NearestNeighbors
@@ -33,20 +33,23 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     # initialization ...
     # call color tranfer algorithm on content image
     print("Performing Color Transfer ...")
-    #data_gen.content = color_transfer.color_transfer(data_gen.style, data_gen.content)
+    data_gen.content = color_transfer.color_transfer(data_gen.style, data_gen.content)
     
     # build gaussian pyramid
     print("Building Pyramids ...")
     content_layers = []
     style_layers = []
     seg_layers = []
-    for iter in range(num_res-1, 0, -1):
-        content_layers.append(imresize(data_gen.content, size=1/(2**iter), interp="bicubic") / 255.0)
-        style_layers.append(imresize(data_gen.style, size=1/(2**iter), interp="bicubic") / 255.0)
-        seg_layers.append(imresize(data_gen.seg_mask, size=1/(2**iter), interp="bicubic") / 255.0)  
     content_layers.append(data_gen.content)
     style_layers.append(data_gen.style)
     seg_layers.append(data_gen.seg_mask)
+    for iter in range(num_res-1, 0, -1):
+        content_layers.append(cv2.pyrDown(content_layers[-1].astype(np.float32)).astype(np.float32))
+        style_layers.append(cv2.pyrDown(style_layers[-1].astype(np.float32)).astype(np.float32))
+        seg_layers.append(cv2.pyrDown(seg_layers[-1].astype(np.float32)).astype(np.float32))    
+    content_layers.reverse()      
+    style_layers.reverse()  
+    seg_layers.reverse()  
 
     # setup patches
     print("Patching Style Layers ...")
@@ -59,7 +62,7 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     
     # initialize X
     print("Initializing Output ...")
-    X = random_noise(content_layers[0], mode='gaussian', var=50)
+    X = random_noise(content_layers[0], mode='gaussian', var=20 / 250.0)
     
     # main stylization loop ...
     print()
@@ -67,14 +70,15 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     print()
     for s_index in range(num_res):
         print("Scale",s_index,": ")
+        X = random_noise(X, mode='gaussian', var=20 / 250.0)
         for p_index in range(len(patch_sizes)):
             print("Patch Size",patch_sizes[p_index],": ")
+            style_features = style_patches[s_index][p_index].reshape(-1, patch_sizes[p_index] * patch_sizes[p_index] * 3)
+            proj_matrix, proj_style_features = pca.pca(style_features)
+            neighbors = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(proj_style_features)
             for iter in range(alg_iter):
                 print("Iteration",iter," ...")
                 # patch matching
-                style_features = style_patches[s_index][p_index].reshape(-1, patch_sizes[p_index] * patch_sizes[p_index] * 3)
-                proj_matrix, proj_style_features = pca.pca(style_features)
-                neighbors = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(proj_style_features)
                 X_patches = extract_patches(X, patch_shape=(patch_sizes[p_index], patch_sizes[p_index], 3), extraction_step=sub_gaps[p_index])
 
                 # robust aggregation
@@ -85,13 +89,13 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
                 X = (1.0 / (seg_mask + 1)) * (X + (seg_mask * content_layers[s_index]))
                 
                 # color transfer
-                #X = color_transfer.color_transfer(style_layers[s_index], X)
+                X = color_transfer.color_transfer(style_layers[s_index], X)
                 
                 # denoise
-                #X = denoise.denoise_image(X)
+                X = denoise.denoise_image(X)
                 
         if (s_index != num_res-1):        
-            X = imresize(X, size=2.0, interp="bicubic").astype(np.float32) / 255.0 
+            X = cv2.resize(X.astype(np.float32), (content_layers[s_index+1].shape[0], content_layers[s_index+1].shape[1])).astype(np.float32)
         print()          
 
     print("Stylization Done!")

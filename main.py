@@ -45,13 +45,13 @@ def main():
     argparser.add_argument(
         '-ii', '--irls_iter',
         metavar='II',
-        default=5,
+        default=3,
         help='number of IRLS iterations'
     )
     argparser.add_argument(
         '-ai', '--alg_iter',
         metavar='AI',
-        default=3,
+        default=10,
         help='number of update iterations per patch size'
     )
     argparser.add_argument(
