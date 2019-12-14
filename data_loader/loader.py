@@ -57,13 +57,13 @@ class DataLoader:
         else:
             raise Exception('Format incompatible!')    
 
-    def segment_content(self):
+    def segment_content(self, segmentation_mode):
         """ 
         The function to call the segmentation algorithm on content image. 
         """
-        self.seg_mask = SegmentationMask(self.content)
+        self.seg_mask = SegmentationMask(self.content, version=segmentation_mode)
 
-    def prepare_data(self, content_path, style_path):
+    def prepare_data(self, content_path, style_path, segmentation_mode):
         """ 
         The function to encapsulate all the data loader functionalities. 
   
@@ -73,7 +73,7 @@ class DataLoader:
         """
         self.load_content(content_path)
         self.load_style(style_path)
-        self.segment_content()
+        self.segment_content(segmentation_mode)
         self.content = (self.content / 255.0).astype(np.float32)
         self.style = (self.style / 255.0).astype(np.float32)
         self.seg_mask = self.seg_mask.astype(np.float32)

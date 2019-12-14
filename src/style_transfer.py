@@ -8,7 +8,7 @@ from data_loader.loader import DataLoader
 from ml_models import irls, pca
 from utils import color_transfer, denoise, utils
 
-def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub_gaps, irls_iter, alg_iter, robust_stat):
+def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub_gaps, irls_iter, alg_iter, robust_stat, content_weight, segmentation_mode, color_transfer_mode, denoise_sigma_s, denoise_sigma_r, denoise_iter):
     """ 
     The function to perform the main logic of style transfer,
     The main stylization loop. 
@@ -20,7 +20,13 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     num_res (int): Number of resolution layers for subsampling
     patch_sizes (list[int]): A list of all patch sizes to work with
     irls_iter (int): Number of IRLS algorithm iterations
-  
+    content_weight (float): Weight of content during fusion
+    segmentation_mode (int): Edge Segmentation method to be used
+    color_transfer_mode (int): Color Transfer method to be used
+    denoise_sigma_s (float): sigma_s constant for denoise
+    denoise_sigma_r (float): sigma_r constant for denoise
+    denoise_iter (int): number of iterations for denoise
+
     Returns: 
     ndarray: stylized image
   
@@ -28,12 +34,15 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     ### data loading ...
     print("Initializing Dataloader ...")
     data_gen = DataLoader(img_size)
-    data_gen.prepare_data(content_path, style_path)
+    data_gen.prepare_data(content_path, style_path, segmentation_mode)
 
     ### initialization ...
     ## call color tranfer algorithm on content image
     print("Performing Color Transfer ...")
-    adapt_content = color_transfer.HM_color_transfer(data_gen.style, data_gen.content)
+    if (color_transfer_mode==0):
+        adapt_content = color_transfer.HM_color_transfer(data_gen.style, data_gen.content)
+    else:
+        adapt_content = color_transfer.color_transfer(data_gen.style, data_gen.content)
     
     ## build gaussian pyramid
     print("Building Pyramids ...")
@@ -97,13 +106,16 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
                 X = irls.IRLS(X, X_patches, style_patches, neighbors, proj_matrix, patch_sizes[p_index], sub_gaps[p_index], irls_iter, robust_stat)
 
                 # content fusion
-                X = (1.0 / (15.0 * current_seg + 1)) * (X + (15.0 * current_seg * current_content))
+                X = (1.0 / (content_weight * current_seg + 1)) * (X + (content_weight * current_seg * current_content))
 
                 # color transfer
-                X = color_transfer.HM_color_transfer(current_style, X)
+                if (color_transfer_mode==0):
+                    X = color_transfer.HM_color_transfer(current_style, X)
+                else:
+                    X = color_transfer.color_transfer(current_style, X)    
 
                 # denoise
-                X[:original_size, :original_size, :] = denoise.denoise_image(X[:original_size, :original_size, :], sigma_s=15, sigma_r=0.17, iterations=3)
+                X[:original_size, :original_size, :] = denoise.denoise_image(X[:original_size, :original_size, :], sigma_s=denoise_sigma_s, sigma_r=denoise_sigma_r, iterations=denoise_iter)
 
             X = X[:original_size, :original_size, :]  # back to the original size
 
