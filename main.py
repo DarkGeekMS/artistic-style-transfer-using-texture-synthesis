@@ -1,4 +1,5 @@
 import argparse
+from timeit import default_timer
 
 from src.style_transfer import style_transfer
 
@@ -54,7 +55,7 @@ def main():
     argparser.add_argument(
         '-ai', '--alg_iter',
         metavar='AI',
-        default=10,
+        default=3,
         help='number of update iterations per patch size'
     )
     argparser.add_argument(
@@ -104,9 +105,13 @@ def main():
     )
     args = argparser.parse_args()
     
+    start_time = default_timer() # get start time of stylization
+    
     style_transfer(args.content_path, args.style_path, args.img_size, args.num_res, args.patch_sizes, args.sub_gaps, args.irls_iter, \
     args.alg_iter, args.robust_stat, args.content_weight, args.segmentation_mode, args.color_transfer_mode, args.denoise_sigma_s,    \
     args.denoise_sigma_r, args.denoise_iter)
+
+    print("Stylization time = ", default_timer()-start_time, " Seconds")
 
 if __name__ == '__main__':
     main()

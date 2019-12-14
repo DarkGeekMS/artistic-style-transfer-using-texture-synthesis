@@ -40,9 +40,9 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     ## call color tranfer algorithm on content image
     print("Performing Color Transfer ...")
     if (color_transfer_mode==0):
-        adapt_content = color_transfer.HM_color_transfer(data_gen.style, data_gen.content)
-    else:
         adapt_content = color_transfer.color_transfer(data_gen.style, data_gen.content)
+    else:
+        adapt_content = color_transfer.HM_color_transfer(data_gen.style, data_gen.content)
     
     ## build gaussian pyramid
     print("Building Pyramids ...")
@@ -93,9 +93,13 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
             ## extract style patches and fit nearest neighbors
             style_patches = extract_patches(current_style, patch_shape=(patch_sizes[p_index], patch_sizes[p_index], 3), extraction_step=sub_gaps[p_index])
             style_features = style_patches.reshape(-1, patch_sizes[p_index] * patch_sizes[p_index] * 3)
-            proj_matrix, proj_style_features = pca.pca(style_features)
-            neighbors = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(proj_style_features)
-            
+            proj_matrix = 0
+            if (patch_sizes[p_index] <= 21):
+                proj_matrix, proj_style_features = pca.pca(style_features)
+                neighbors = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(proj_style_features)
+            else:
+                neighbors = NearestNeighbors(n_neighbors=1, n_jobs=-1).fit(style_features)
+
             for iter in range(alg_iter):
                 print("Iteration",iter," ...")
 
@@ -110,9 +114,9 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
 
                 # color transfer
                 if (color_transfer_mode==0):
-                    X = color_transfer.HM_color_transfer(current_style, X)
+                    X = color_transfer.color_transfer(current_style, X)
                 else:
-                    X = color_transfer.color_transfer(current_style, X)    
+                    X = color_transfer.HM_color_transfer(current_style, X)    
 
                 # denoise
                 X[:original_size, :original_size, :] = denoise.denoise_image(X[:original_size, :original_size, :], sigma_s=denoise_sigma_s, sigma_r=denoise_sigma_r, iterations=denoise_iter)
