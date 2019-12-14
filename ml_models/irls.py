@@ -23,7 +23,8 @@ def IRLS(X, X_patches, style_patches, neighbors, proj_matrix, patch_size, sub_ga
     for iter_1 in range(I_irls): # loop over irls iterations
         # get X features and project them
         x_features = X_patches.reshape(-1, X_patches.shape[3] * X_patches.shape[3] * 3)
-        x_features = transform_pca(proj_matrix, x_features)
+        if (patch_size <= 21):
+            x_features = transform_pca(proj_matrix, x_features)
         style_patches_iter = style_patches.reshape(-1, style_patches.shape[3], style_patches.shape[4], style_patches.shape[5])
         
         # apply KNN and initialize weights matrix
