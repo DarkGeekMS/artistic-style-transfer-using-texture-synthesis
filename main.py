@@ -12,12 +12,12 @@ def main():
     argparser.add_argument(
         '-c', '--content_path',
         metavar='C',
-        default='None',
+        default='data/content/eagles.jpg',
         help='path to content image (or video)')
     argparser.add_argument(
         '-s', '--style_path',
         metavar='S',
-        default='None',
+        default='data/style/van_gogh.jpg',
         help='path to style image'
     )   
     argparser.add_argument(
@@ -36,13 +36,13 @@ def main():
     argparser.add_argument(
         '-ps', '--patch_sizes',
         metavar='PS',
-        default=[33,21,13,9,5],
+        default=[33,21,13,9],
         help='patch sizes to be used'
     ) 
     argparser.add_argument(
         '-sg', '--sub_gaps',
         metavar='SG',
-        default=[28,18,8,5,3],
+        default=[28,18,8,5],
         help='subsampling gaps to be used'
     )
     # learning parameters
@@ -81,20 +81,20 @@ def main():
     argparser.add_argument(
         '-ctm', '--color_transfer_mode',
         metavar='CTM',
-        default=0,
+        default=1,
         help='color transfer method to be used'
     )
     # denoise parameters
     argparser.add_argument(
         '-dss', '--denoise_sigma_s',
         metavar='DSS',
-        default=20,
+        default=5,
         help='sigma_s for denoise'
     )
     argparser.add_argument(
         '-dsr', '--denoise_sigma_r',
         metavar='DSR',
-        default=0.17,
+        default=0.2,
         help='sigma_r for denoise'
     )
     argparser.add_argument(

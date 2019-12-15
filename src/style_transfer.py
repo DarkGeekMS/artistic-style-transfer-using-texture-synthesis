@@ -132,5 +132,5 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     # save and show stylized image
     im_to_write = cv2.cvtColor((X*255.0).astype(np.uint8), cv2.COLOR_RGB2BGR)
     cv2.imwrite("outputs/output.png", im_to_write)
-    utils.show_images([data_gen.content, data_gen.style, X], ["Content", "Style", "Stylized Image"])
+    utils.show_images([data_gen.content, data_gen.style, data_gen.seg_mask, X], ["Content", "Style", "Segmentation Mask", "Stylized Image"])
 
