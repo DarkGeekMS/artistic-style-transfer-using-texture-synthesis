@@ -21,14 +21,14 @@ def main():
         type=str,
         default='data/style/van_gogh.jpg',
         help='path to style image'
-    )   
+    )
     argparser.add_argument(
         '-is', '--img_size',
         metavar='IS',
         type=int,
         default=400,
         help='maximum image size'
-    ) 
+    )
     # fundamental arguments
     argparser.add_argument(
         '-nr', '--num_res',
@@ -36,7 +36,7 @@ def main():
         type=int,
         default=3,
         help='number of resolution layers'
-    ) 
+    )
     argparser.add_argument(
         '-ps', '--patch_sizes',
         metavar='PS',
@@ -44,7 +44,7 @@ def main():
         nargs='+',
         default=[33,21,13,9],
         help='patch sizes to be used'
-    ) 
+    )
     argparser.add_argument(
         '-sg', '--sub_gaps',
         metavar='SG',
@@ -121,9 +121,9 @@ def main():
         help='number of iterations for denoise'
     )
     args = argparser.parse_args()
-    
+
     start_time = default_timer() # get start time of stylization
-    
+
     style_transfer(args.content_path, args.style_path, args.img_size, args.num_res, args.patch_sizes, args.sub_gaps, args.irls_iter, \
     args.alg_iter, args.robust_stat, args.content_weight, args.segmentation_mode, args.color_transfer_mode, args.denoise_sigma_s,    \
     args.denoise_sigma_r, args.denoise_iter)
