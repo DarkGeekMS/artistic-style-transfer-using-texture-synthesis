@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from timeit import default_timer
 from sklearn.feature_extraction.image import extract_patches
 from skimage.util import view_as_windows, random_noise, pad
 from sklearn.neighbors import NearestNeighbors
@@ -31,6 +32,8 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
     ndarray: stylized image
   
     """
+    start_time = default_timer() # initialize the timer to measure performance
+
     ### data loading ...
     print("Initializing Dataloader ...")
     data_gen = DataLoader(img_size)
@@ -129,8 +132,13 @@ def style_transfer(content_path, style_path, img_size, num_res, patch_sizes, sub
         print()          
 
     print("Stylization Done!")
-    # save and show stylized image
+    print("Stylization time = ", default_timer()-start_time, " Seconds")
+    
+    # save stylized image and segmentation mask
     im_to_write = cv2.cvtColor((X*255.0).astype(np.uint8), cv2.COLOR_RGB2BGR)
     cv2.imwrite("outputs/output.png", im_to_write)
-    utils.show_images([data_gen.content, data_gen.style, data_gen.seg_mask, X], ["Content", "Style", "Segmentation Mask", "Stylized Image"])
+    im_to_write = cv2.cvtColor((data_gen.seg_mask*255.0).astype(np.uint8), cv2.COLOR_RGB2BGR)
+    cv2.imwrite("outputs/seg_output.png", im_to_write)
+
+    return data_gen.content, data_gen.style, data_gen.seg_mask, X # return data for display
 

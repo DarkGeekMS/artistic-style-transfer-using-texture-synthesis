@@ -10,7 +10,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys,os
 from PyQt5.QtWidgets import  QTableWidget,QTableWidgetItem, QFileDialog
-
+from PyQt5.QtGui import QPixmap
+from src.style_transfer import style_transfer
 
 class Ui_ArtisticStyleTransfer(object):
     def setupUi(self, ArtisticStyleTransfer):
@@ -179,6 +180,9 @@ class Ui_ArtisticStyleTransfer(object):
         self.PatchNum.addItem("")
         ArtisticStyleTransfer.setCentralWidget(self.centralwidget)
 
+        self.content_path = None
+        self.style_path = None
+
         self.retranslateUi(ArtisticStyleTransfer)
         QtCore.QMetaObject.connectSlotsByName(ArtisticStyleTransfer)
 
@@ -226,7 +230,7 @@ class Ui_ArtisticStyleTransfer(object):
         dlg.setFileMode(QFileDialog.AnyFile)
 
         if dlg.exec_():
-            self.path = dlg.selectedFiles()[0]
+            self.content_path = dlg.selectedFiles()[0]
 
 
 
@@ -235,13 +239,60 @@ class Ui_ArtisticStyleTransfer(object):
         dlg = QFileDialog()
         dlg.setFileMode(QFileDialog.AnyFile)
         if dlg.exec_():
-            self.path = dlg.selectedFiles()[0]
+            self.style_path = dlg.selectedFiles()[0]
 
 
 
     def applyStyle(self):
-        pass
 
+        if (self.content_path == None):
+            self.content_path = 'data/content/eagles.jpg'
+
+        if (self.style_path == None):
+            self.style_path = 'data/style/van_gogh.jpg'  
+
+        if (self.PatchNum.currentIndex() == 0):
+            patch_sizes = [33,21,13,9,5]
+            sub_gaps = [28,18,8,5,3]
+        elif (self.PatchNum.currentIndex() == 1):
+            patch_sizes = [33,21,13,9]
+            sub_gaps = [28,18,8,5]    
+        elif (self.PatchNum.currentIndex() == 2):
+            patch_sizes = [33,21,13]
+            sub_gaps = [28,18,8]    
+        elif (self.PatchNum.currentIndex() == 3):
+            patch_sizes = [33,21]
+            sub_gaps = [28,18]    
+        else:
+            patch_sizes = [33]
+            sub_gaps = [28]    
+
+        if (self.SegmentationTechnique.currentIndex() == 1):
+            seg_mode = 2
+        elif (self.SegmentationTechnique.currentIndex() == 2):
+            seg_mode = 1
+        else:
+            seg_mode = 0       
+
+        if (self.colorTransfer.currentIndex() == 1):
+            ct_mode = '1'
+        else:
+            ct_mode = '0'      
+
+        content, style, seg_mask, X = style_transfer(self.content_path, self.style_path, self.imgSize.value(), self.DOP.value(), patch_sizes, sub_gaps, self.irlsItr.value(), \
+        self.learningItr.value(), self.RSV.value(), 5.0, seg_mode, ct_mode, self.sigmaS.value(), self.sigmaR.value(), self.denoisingItr.value())
+
+        pixmap = QtGui.QPixmap(self.content_path)
+        self.contentImg.setPixmap(pixmap)
+        
+        pixmap = QtGui.QPixmap(self.style_path)
+        self.styleImg.setPixmap(pixmap)
+
+        pixmap = QtGui.QPixmap("outputs/output.png")
+        self.stylizedImg.setPixmap(pixmap)
+
+        pixmap = QtGui.QPixmap("outputs/seg_output.png")
+        self.segImg.setPixmap(pixmap)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

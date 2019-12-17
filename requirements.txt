@@ -1,0 +1,6 @@
+numpy==1.17
+opencv-python
+opencv-contrib-python
+sklearn
+skimage
+matplotlib
