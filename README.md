@@ -23,4 +23,10 @@ Paper: https://arxiv.org/abs/1609.03057
 ```
 Specify other arguments, if needed.
 
+## Output Sample
+
+![Alt text](/data/content/house2small.jpg?raw=true "Content")
+![Alt text](/data/style/derschrei.jpg?raw=true "Style")
+![Alt text](/outputs/samples/output_2.png?raw=true "Output")
+
 **Cheers ^ ^**
